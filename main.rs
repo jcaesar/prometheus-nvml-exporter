@@ -35,6 +35,7 @@ lazy_static! {
 	static ref MEMORY_USED: IntGaugeVec = register_int_gauge_vec!("nvml_memory_used_bytes", "Used Memory", &GPU_LABELS).unwrap();
 	static ref MEMORY_TOTAL: IntGaugeVec = register_int_gauge_vec!("nvml_memory_total_bytes", "Total Memory", &GPU_LABELS).unwrap();
 	static ref FAN_SPEED: GaugeVec = register_gauge_vec!("nvml_fan_speed", "Fan speed (0-1)", &[&GPU_LABELS[..], &["fan"][..]].concat()).unwrap();
+	static ref TEMPERATURE: GaugeVec = register_gauge_vec!("nvml_temp", "Temperature degC", &GPU_LABELS).unwrap();
 	static ref PERFORMANCE_STATE: IntGaugeVec = register_int_gauge_vec!("nvml_performance_state", "Performance State (between 15 (low) and 0 (high))", &GPU_LABELS).unwrap();
 	static ref POWER_USAGE: IntGaugeVec = register_int_gauge_vec!("nvml_power_usage_current_mw", "Current power usage (mW)", &GPU_LABELS).unwrap();
 	static ref POWER_MAX: IntGaugeVec = register_int_gauge_vec!("nvml_power_usage_max_mw", "Enforced power limit (mW)", &GPU_LABELS).unwrap();
@@ -99,6 +100,7 @@ impl MetricDevice<'_> {
 				)?
 				.set(self.device.fan_speed(i)? as f64 / 100.);
 		}
+		TEMPERATURE.get_metric_with_label_values(&self.labels())?.set(self.device.temperature(nvml_wrapper::enum_wrappers::device::TemperatureSensor::Gpu)? as f64);
 		PERFORMANCE_STATE.get_metric_with_label_values(&self.labels())?.set(self.performance_state()?);
 		POWER_USAGE.get_metric_with_label_values(&self.labels())?.set(self.device.power_usage()? as i64);
 		POWER_MAX.get_metric_with_label_values(&self.labels())?.set(self.device.enforced_power_limit()? as i64);
