@@ -6,7 +6,9 @@ use prometheus::{
     register_gauge_vec, register_int_counter_vec, register_int_gauge_vec,
 };
 use prometheus_exporter::{FinishedUpdate, PrometheusExporter};
+use std::cmp;
 use std::net::SocketAddr;
+use std::time::{Duration, Instant};
 use structopt::StructOpt;
 
 #[derive(StructOpt)]
@@ -163,22 +165,33 @@ impl MetricDevice<'_> {
 
 fn main() -> Result<()> {
     let opts: Opts = Opts::from_args();
-    let nvml = NVML::init()?;
-
-    let devices = (0..(nvml.device_count()?))
-        .map(|idx| nvml.device_by_index(idx))
-        .collect::<std::result::Result<Vec<_>, _>>()?
-        .into_iter()
-        .map(MetricDevice::new)
-        .collect::<std::result::Result<Vec<_>, _>>()?;
 
     let (request_receiver, finished_sender) = PrometheusExporter::run_and_notify(opts.listen);
 
+    let mut lastdevices = 0;
+    let mut refresh_interval = Duration::from_secs(30);
+
     loop {
-        request_receiver.recv().unwrap();
-        for dev in &devices {
-            dev.update()?;
+        let nvml = NVML::init()?;
+        let devices = (0..(nvml.device_count()?))
+            .map(|idx| nvml.device_by_index(idx))
+            .collect::<std::result::Result<Vec<_>, _>>()?
+            .into_iter()
+            .map(MetricDevice::new)
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        refresh_interval = match lastdevices == devices.len() {
+            false => Duration::from_secs(30),
+            true => cmp::min(refresh_interval * 2, Duration::from_secs(3600)),
+        };
+        lastdevices = devices.len();
+        let nextupdate = Instant::now() + refresh_interval;
+
+        while Instant::now() < nextupdate {
+            request_receiver.recv().unwrap();
+            for dev in &devices {
+                dev.update()?;
+            }
+            finished_sender.send(FinishedUpdate).unwrap();
         }
-        finished_sender.send(FinishedUpdate).unwrap();
     }
 }
