@@ -8,13 +8,12 @@ use prometheus::{
 use std::cmp;
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
-use structopt::StructOpt;
 
-#[derive(StructOpt)]
-#[structopt(author = env!("CARGO_PKG_AUTHORS"), about = env!("CARGO_PKG_DESCRIPTION"))]
+#[derive(clap::Parser)]
+#[clap(author, version, about)]
 struct Opts {
     /// Listen address/port
-    #[structopt(short = "l", long = "listen", default_value = "[::]:9144")]
+    #[structopt(short = 'l', long = "listen", default_value = "[::]:9144")]
     listen: SocketAddr,
 }
 
@@ -163,7 +162,7 @@ impl MetricDevice<'_> {
 }
 
 fn main() -> Result<()> {
-    let opts: Opts = Opts::from_args();
+    let opts: Opts = clap::Parser::parse();
 
     let exporter = prometheus_exporter::start(opts.listen)?;
 
