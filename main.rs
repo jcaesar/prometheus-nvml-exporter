@@ -1,11 +1,10 @@
 #[macro_use]
 extern crate lazy_static;
-use nvml_wrapper::{Device, NVML};
+use nvml_wrapper::{Device, Nvml};
 use prometheus::{
-    GaugeVec, IntCounterVec, IntGaugeVec, __register_counter_vec, __register_gauge_vec, opts,
-    register_gauge_vec, register_int_counter_vec, register_int_gauge_vec,
+    register_gauge_vec, register_int_counter_vec, register_int_gauge_vec, GaugeVec, IntCounterVec,
+    IntGaugeVec,
 };
-use prometheus_exporter::{FinishedUpdate, PrometheusExporter};
 use std::cmp;
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
@@ -148,14 +147,14 @@ impl MetricDevice<'_> {
         let energy_prev = ENERGY_USED
             .get_metric_with_label_values(&self.labels())?
             .get();
-        let energy_current: i64 = self.device.total_energy_consumption()?.try_into()?;
+        let energy_current: u64 = self.device.total_energy_consumption()?.try_into()?;
         ENERGY_USED
             .get_metric_with_label_values(&self.labels())?
             .inc_by(energy_current - energy_prev);
         let replay_prev = PCI_REPLAY
             .get_metric_with_label_values(&self.labels())?
             .get();
-        let replay_current: i64 = self.device.pcie_replay_counter()?.try_into()?;
+        let replay_current: u64 = self.device.pcie_replay_counter()?.try_into()?;
         PCI_REPLAY
             .get_metric_with_label_values(&self.labels())?
             .inc_by(replay_current - replay_prev);
@@ -166,13 +165,13 @@ impl MetricDevice<'_> {
 fn main() -> Result<()> {
     let opts: Opts = Opts::from_args();
 
-    let (request_receiver, finished_sender) = PrometheusExporter::run_and_notify(opts.listen);
+    let exporter = prometheus_exporter::start(opts.listen)?;
 
     let mut lastdevices = 0;
     let mut refresh_interval = Duration::from_secs(30);
 
     loop {
-        let nvml = NVML::init()?;
+        let nvml = Nvml::init()?;
         let devices = (0..(nvml.device_count()?))
             .map(|idx| nvml.device_by_index(idx))
             .collect::<std::result::Result<Vec<_>, _>>()?
@@ -187,11 +186,10 @@ fn main() -> Result<()> {
         let nextupdate = Instant::now() + refresh_interval;
 
         while Instant::now() < nextupdate {
-            request_receiver.recv().unwrap();
+            let _update_guard = exporter.wait_request();
             for dev in &devices {
                 dev.update()?;
             }
-            finished_sender.send(FinishedUpdate).unwrap();
         }
     }
 }
