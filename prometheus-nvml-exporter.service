@@ -1,4 +1,4 @@
-# /etc/systemd/system/nvml-prometheus-exporter.service
+# /etc/systemd/system/prometheus-nvml-exporter.service
 # Stolen pretty straightup from the arch linux prometheus node exporter unit file
 
 [Unit]
@@ -10,7 +10,7 @@ After=network-online.target
 User=node_exporter
 Group=node_exporter
 Restart=on-failure
-ExecStart=/usr/local/bin/nvml-prometheus-exporter
+ExecStart=/usr/local/bin/prometheus-nvml-exporter
 NoNewPrivileges=true
 ProtectHome=true
 ProtectSystem=strict
