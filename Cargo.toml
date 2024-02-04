@@ -3,7 +3,7 @@ name = "prometheus-nvml-exporter"
 description = "A rather basic exporter for nvidia graphics cards' metrics"
 version = "0.1.0"
 authors = ["Julius Michaelis <michaelis@jp.fujitsu.com>"]
-edition = "2018"
+edition = "2021"
 
 [[bin]]
 name = "prometheus-nvml-exporter"

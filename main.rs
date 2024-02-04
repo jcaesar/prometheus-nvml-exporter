@@ -1,5 +1,3 @@
-#[macro_use]
-extern crate lazy_static;
 use nvml_wrapper::{Device, Nvml};
 use prometheus::{
     register_gauge_vec, register_int_counter_vec, register_int_gauge_vec, GaugeVec, IntCounterVec,
@@ -20,7 +18,7 @@ struct Opts {
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 static GPU_LABELS: [&str; 3] = ["uuid", "name", "pci"];
-lazy_static! {
+lazy_static::lazy_static! {
     static ref MEMORY_FREE: IntGaugeVec =
         register_int_gauge_vec!("nvml_memory_free_bytes", "Free Memory", &GPU_LABELS).unwrap();
     static ref MEMORY_USED: IntGaugeVec =
@@ -110,7 +108,6 @@ impl MetricDevice<'_> {
     }
     fn update(&self) -> Result<()> {
         let meminfo = self.device.memory_info()?;
-        use std::convert::TryInto;
         MEMORY_FREE
             .get_metric_with_label_values(&self.labels())?
             .set(meminfo.free.try_into()?);
