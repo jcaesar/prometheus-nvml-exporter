@@ -5,14 +5,19 @@ use prometheus::{
 };
 use std::cmp;
 use std::net::SocketAddr;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 #[derive(clap::Parser)]
 #[clap(author, version, about)]
 struct Opts {
     /// Listen address/port
-    #[structopt(short = 'l', long = "listen", default_value = "[::]:9144")]
+    #[structopt(short = 'l', long = "listen", default_value = "[::]:9144", env)]
     listen: SocketAddr,
+    /// Specify where to load nvml library from
+    // runtime loading, so we can't use the normal linker magic
+    #[structopt(long, env)]
+    nvml_library_path: Option<PathBuf>,
 }
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -167,7 +172,25 @@ fn main() -> Result<()> {
     let mut refresh_interval = Duration::from_secs(30);
 
     loop {
-        let nvml = Nvml::init()?;
+        let mut nvml = Nvml::builder();
+        match &opts.nvml_library_path {
+            Some(path) => {
+                nvml.lib_path(path.as_os_str());
+            }
+            None => {
+                let paths = [
+                    Path::new("/usr/lib/libnvidia-ml.so"),
+                    Path::new("/run/opengl-driver/lib/libnvidia-ml.so"),
+                ];
+                for path in paths {
+                    if path.exists() {
+                        nvml.lib_path(path.as_os_str());
+                        break;
+                    }
+                }
+            }
+        };
+        let nvml = nvml.init()?;
         let devices = (0..(nvml.device_count()?))
             .map(|idx| nvml.device_by_index(idx))
             .collect::<std::result::Result<Vec<_>, _>>()?
