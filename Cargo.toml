@@ -16,7 +16,7 @@ codegen-units = 1
 
 [dependencies]
 nvml-wrapper = "0.10.0"
-prometheus_exporter = "0.8.5"
-prometheus = { version = "0.14.0", features = [ "process" ] }
+prometheus_exporter = { git = "https://github.com/AlexanderThaller/prometheus_exporter.git", rev = "c49efe614486f998b20eb410ae0caf3e904cf540" }
+prometheus = { version = "0.14.0", features = ["process"] }
 lazy_static = "1.5.0"
 clap = { version = "4.5.37", features = ["derive", "env", "string"] }
