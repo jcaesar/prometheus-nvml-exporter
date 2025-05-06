@@ -3,7 +3,8 @@ name = "prometheus-nvml-exporter"
 description = "A rather basic exporter for nvidia graphics cards' metrics"
 version = "0.1.0"
 authors = ["Julius Michaelis <michaelis@jp.fujitsu.com>"]
-edition = "2021"
+edition = "2024"
+rust-version = "1.86"
 
 [[bin]]
 name = "prometheus-nvml-exporter"
@@ -14,8 +15,8 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-nvml-wrapper = "0.9.0"
+nvml-wrapper = "0.10.0"
 prometheus_exporter = "0.8.5"
-prometheus = { version = "0.13.3", features = [ "process" ] }
-lazy_static = "1.4.0"
-clap = { version = "4.4.18", features = ["derive", "env", "string"] }
+prometheus = { version = "0.14.0", features = [ "process" ] }
+lazy_static = "1.5.0"
+clap = { version = "4.5.37", features = ["derive", "env", "string"] }
