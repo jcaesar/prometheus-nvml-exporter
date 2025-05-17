@@ -1,7 +1,7 @@
 use nvml_wrapper::{Device, Nvml};
-use prometheus::{
-    register_gauge_vec, register_int_counter_vec, register_int_gauge_vec, GaugeVec, IntCounterVec,
-    IntGaugeVec,
+use prometheus_exporter::prometheus::{
+    GaugeVec, IntCounterVec, IntGaugeVec, register_gauge_vec, register_int_counter_vec,
+    register_int_gauge_vec,
 };
 use std::cmp;
 use std::net::SocketAddr;
